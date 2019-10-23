@@ -32,11 +32,11 @@ class Cafe :
                                         ["POQUITO","POQUITO","POCO","BASTANTE","MUCHO"],
                                         ["POQUITO","POQUITO","POCO","BASTANTE","BASTANTE"]])}
         self.escalas = {"dulce" : [0,100], "fuerte" : [0,100], "agua" : [0,240], "azucar" : [0,100]}    # variable : start,end
-        self.entradas = {"dulce" : [54,5], "fuerte" : [89,4]}   # variable : valor,splits
+        self.entradas = {"dulce" : [0,5], "fuerte" : [0,4]}   # variable : valor,splits
         self.salidas = {"agua" : [40,"mL"], "azucar" : [0,"g"]} # variable : valor,unidad
 
     def run(self):
-        #self.pedirUsuario()
+        self.pedirUsuario()
         self.fuzzificar()
         self.llenarMatriz()
         print("\n*******   SU CAFE CONTIENE   *******")
@@ -72,9 +72,9 @@ class Cafe :
 
     def addGauss(self,ax,xmin,xmax,promedio,sigma,label):
         x = np.linspace(xmin, xmax, 100)
-        y = norm.pdf(x,promedio,sigma)
+        y = norm.pdf(x,promedio,sigma)/norm.pdf(promedio,promedio,sigma)
         ax.plot(x,y,color="lightblue")
-        ax.text(promedio-3, 0.01, label, fontsize=9)
+        ax.text(promedio-3, 0.6, label, fontsize=9)
         
     def fuzzificar(self):
         fig1=plt.figure(figsize=(15,10))
@@ -84,30 +84,32 @@ class Cafe :
             ax=plt.subplot(2,1,dim,title=key)
             plt.grid()
             labels=self.labels[key]
-            scale=self.escalas[key] # 0-100
-            nbSplit=value[1] # 5
-            n=int((scale[1]-scale[0])/(nbSplit-1)) # 25
-            sigma=n/(nbSplit-1)
+            scale=self.escalas[key]
+            nbSplit=value[1]
+            n=int((scale[1]-scale[0])/(nbSplit-1))
+            sigma=n/3
             for i in range(0,nbSplit):
                 promedio=scale[0]+i*n
                 self.addGauss(ax,scale[0],scale[1],promedio,sigma,labels[i][0])
+                self.labels[key][i][1]=round(norm.pdf(value[0],promedio,sigma)/norm.pdf(promedio,promedio,sigma),2)
             ax.axvline(value[0],color="Crimson")
             dim+=1
-        plt.show()
+        #plt.show()
+        plt.savefig("Fuzzificacion")
 
     def llenarMatriz(self):
-        print("llenarMatriz not implemented yet")
+        print("llenarMatriz() not implemented yet")
     
     def etiquetaSalida(self, salida):
         result = dict()
         # LLENAR DICTIONARIO
-        print("Not implemented yet")
+        print("etiquetaSalida() not implemented yet")
         return result
         
     def defuzzificar(self, salida, etiquetas):
         result=0
         # defuzzificar variable de salida
-        print("Not implemented yet")
+        print("defuzzificar() not implemented yet")
         return result
 
 if __name__ == '__main__':
