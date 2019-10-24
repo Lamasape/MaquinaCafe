@@ -12,27 +12,25 @@ import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 
+import json
+with open('Dictionario.json') as js:
+    DICTIONARIO = json.load(js)
+    ENTRADAS = DICTIONARIO.get('entradas')
+    SALIDAS = DICTIONARIO.get('salidas')
+    VARIABLES = DICTIONARIO.get('variables')
+
 # %% Clase principal
 
 class Cafe :
 
-    def __init__ (self):
-        self.labels={"dulce" : [["PURO",0],["AMARGO",0],["SUAVE",0],["DULCE",0],["DEMASIADO",0]], 
-                    "fuerte" : [["SUBTIL",0],["LIGERO",0],["AMARGO",0],["FUERTE",0]], 
-                    "agua" : [["POQUITO",0],["POCO",0],["BASTANTE",0],["MUCHO",0]], 
-                    "azucar" : [["POQUITO",0],["POCO",0],["BASTANTE",0],["MUCHO",0]]}   # variable : list[clase, valor de mu]
-        self.matrices = {"agua":np.array([["BASTANTE","BASTANTE","MUCHO","MUCHO","MUCHO"],
-                                        ["POCO","POCO","BASTANTE","BASTANTE","MUCHO"],
-                                        ["POQUITO","POQUITO","POCO","POCO","BASTANTE"],
-                                        ["POQUITO","POQUITO","POQUITO","POCO","POCO"]]),
-                        "azucar":np.array([["POCO","POCO","BASTANTE","MUCHO","MUCHO"],
-                                        ["POQUITO","POCO","BASTANTE","MUCHO","MUCHO"],
-                                        ["POQUITO","POQUITO","POCO","BASTANTE","MUCHO"],
-                                        ["POQUITO","POQUITO","POCO","BASTANTE","BASTANTE"]])}
-        self.escalas = {"dulce" : [0,100], "fuerte" : [0,100], "agua" : [0,240], "azucar" : [0,100]}    # variable : start,end
-        self.entradas = {"dulce" : [0,5], "fuerte" : [0,4]}   # variable : valor,splits
-        self.salidas = {"agua" : [40,"mL"], "azucar" : [0,"g"]} # variable : valor,unidad
-        self.matrizProba = np.zeros([4,5])
+    def __init__ (self,entradas,salidas,variables):
+        self.entradas=entradas    # list of String
+        self.salidas=salidas      # list of String
+        self.variables=variables  # dict
+        dim=[]
+        for e in entradas :
+            dim.append(len(variables[e]["labels"]))
+        self.matrizProba = np.zeros(dim)
 
     def run(self):
         self.pedirUsuario()
@@ -40,28 +38,29 @@ class Cafe :
         self.llenarMatriz()
         print("\n*******   SU CAFE CONTIENE   *******")
         print("14 g de cafe puro Colombiano")
-        for key, value in self.salidas.items() :
-            d = self.etiquetaSalida(key)
-            value[0] += self.defuzzificar(key, d)
-            print("{} {} de {}.".format(value[0], value[1], key))
+        for key in self.salidas :
+            d=self.etiquetaSalida(key)
+            self.variables[key]["salida"] += self.defuzzificar(key,d)
+            print("{} {} de {}.".format(self.variables[key]["salida"], 
+                  self.variables[key]["unidad"], key))
 
     def pedirUsuario(self):
         print("*******   BIENVENIDO   *******")
-        for key,value in self.entradas.items() :
+        for key in self.entradas :
             ok=False;
-            mini=self.escalas[key][0]
-            maxi=self.escalas[key][1]
+            mini=self.variables[key]["escala"][0]
+            maxi=self.variables[key]["escala"][1]
             print("Que tan {} le gustaria su cafe?".format(key))
             while ok==False :
                 try:
                     res=int(input("Escriba un valor entre {} y {} : ".format(mini,maxi)))
-                    ok=True
                     if res<mini or res>maxi :
                         print("Su numero no cumple las condiciones...")
                         ok=False
+                    else : ok=True
                 except ValueError :
                     print("Escribe un numero porfavor")
-            self.entradas[key][0]=res
+            self.variables[key]["entrada"]=res
 
         print("Listo! Empezamos la preparacion :-)")
 
@@ -75,19 +74,20 @@ class Cafe :
         plt.figure(figsize=(15,10))
         plt.suptitle("FUZZIFICACION",fontsize=16)
         dim=1
-        for key, value in self.entradas.items() :
+        for key in self.entradas :
             ax=plt.subplot(2,1,dim,title="Que tan {} ?".format(key))
             plt.grid()
-            labels=self.labels[key]
-            scale=self.escalas[key]
-            nbSplit=value[1]
+            labels=self.variables[key]["labels"]
+            scale=self.variables[key]["escala"]
+            nbSplit=len(labels)
             n=int((scale[1]-scale[0])/(nbSplit-1))
             sigma=n/3
             for i in range(0,nbSplit):
                 promedio=scale[0]+i*n
-                self.addGauss(ax,scale[0],scale[1],promedio,sigma,labels[i][0])
-                self.labels[key][i][1]=round(norm.pdf(value[0],promedio,sigma)/norm.pdf(promedio,promedio,sigma),2)
-            ax.axvline(value[0],color="Crimson")
+                self.addGauss(ax,scale[0],scale[1],promedio,sigma,labels[i])
+                mu=round(norm.pdf(self.variables[key]["entrada"],promedio,sigma)/norm.pdf(promedio,promedio,sigma),2)
+                self.variables[key]["valuesMu"][i]=mu
+            ax.axvline(self.variables[key]["entrada"],color="Crimson")
             dim+=1
         plt.show()
         plt.savefig("Fuzzificacion")
@@ -109,5 +109,7 @@ class Cafe :
     
 # %% Ejecucion
 if __name__ == '__main__':
-    coffee = Cafe()
+    coffee = Cafe(ENTRADAS,SALIDAS,VARIABLES)
+    print(coffee.matrizProba)
     coffee.run()
+    print(coffee.matrizProba)
