@@ -33,14 +33,14 @@ class Cafe :
         self.matrizProba = np.zeros(dim)
 
     def run(self):
-        self.pedirUsuario()
+        #self.pedirUsuario()
         self.fuzzificar()
         self.llenarMatriz()
         print("\n*******   SU CAFE CONTIENE   *******")
         print("14 g de cafe puro Colombiano")
+        self.etiquetaSalida()
+        self.defuzzificar()
         for key in self.salidas :
-            d=self.etiquetaSalida(key)
-            self.variables[key]["salida"] += self.defuzzificar(key,d)
             print("{} {} de {}.".format(self.variables[key]["salida"], 
                   self.variables[key]["unidad"], key))
 
@@ -93,23 +93,53 @@ class Cafe :
         plt.savefig("Fuzzificacion")
 
     def llenarMatriz(self):
-        print("llenarMatriz() not implemented yet")
+        fuerte=self.variables["fuerte"]["valuesMu"]
+        dulce=self.variables["dulce"]["valuesMu"]
+        for i in range(len(fuerte)):
+            for j in range(len(dulce)):
+                self.matrizProba[i][j]=min(fuerte[i],dulce[j])
     
-    def etiquetaSalida(self, salida):
-        result = dict()
-        # LLENAR DICTIONARIO
-        print("etiquetaSalida() not implemented yet")
-        return result
+    def etiquetaSalida(self):
+        lineas, columnas = self.matrizProba.shape
+        for key in self.salidas :
+            result = dict()
+            for lab in self.variables[key]["labels"]:
+                result[lab]=[]
+                
+            for i in range(lineas):
+                for j in range(columnas):
+                    lab=self.variables[key]["matriz"][i][j]
+                    val=self.matrizProba[i][j]
+                    result[lab].append(val)
+            
+            for k in range(len(self.variables[key]["labels"])):
+                self.variables[key]["valuesMu"][k]=max(result[self.variables[key]["labels"][k]])
         
-    def defuzzificar(self, salida, etiquetas):
-        result=0
-        # defuzzificar variable de salida
-        print("defuzzificar() not implemented yet")
-        return result
+    def defuzzificar(self):
+        plt.figure(figsize=(15,10))
+        plt.suptitle("defuzzificar",fontsize=16)
+        dim=1
+        for key in self.salidas :
+            ax=plt.subplot(2,1,dim,title="Cuanto {} ?".format(key))
+            plt.grid()
+            labels=self.variables[key]["labels"]
+            scale=self.variables[key]["escala"]
+            nbSplit=len(labels)
+            n=int((scale[1]-scale[0])/(nbSplit-1))
+            sigma=n/3
+            valuesX=[]
+            for i in range(0,nbSplit): 
+                promedio=scale[0]+i*n
+                self.addGauss(ax,scale[0],scale[1],promedio,sigma,labels[i])
+                valuesX.append(norm.cdf(self.variables[key]["valuesMu"][i]*norm.pdf(promedio,promedio,sigma),promedio,sigma))
+            print(valuesX)
+            self.variables[key]["salida"]=sum(valuesX)/len(valuesX)
+            ax.axvline(self.variables[key]["salida"],color="Crimson")
+            dim+=1
+        plt.show()
+        plt.savefig("defuzzificar")
     
 # %% Ejecucion
 if __name__ == '__main__':
     coffee = Cafe(ENTRADAS,SALIDAS,VARIABLES)
-    print(coffee.matrizProba)
     coffee.run()
-    print(coffee.matrizProba)
