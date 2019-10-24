@@ -1,24 +1,22 @@
 #-------------------------------------------------------------------------------
-# Name:        module1
-# Purpose:
+# Intro IA - Proyecto 3
 #
-# Author:      Laura Mambo
+#             ***   Logica Difusa : MAQUINA DE CAFE   ***
 #
+#
+# Authors:     Laura SANCHEZ & Elise JACQUEMET 
 # Created:     23/10/2019
-# Copyright:   (c) Laura Mambo 2019
-# Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
 import numpy as np
 from scipy.stats import norm
-from scipy.integrate import quad
 import matplotlib.pyplot as plt
 
+# %% Clase principal
 
 class Cafe :
 
     def __init__ (self):
-        self.matrizProba = np.zeros([4,5])
         self.labels={"dulce" : [["PURO",0],["AMARGO",0],["SUAVE",0],["DULCE",0],["DEMASIADO",0]], 
                     "fuerte" : [["SUBTIL",0],["LIGERO",0],["AMARGO",0],["FUERTE",0]], 
                     "agua" : [["POQUITO",0],["POCO",0],["BASTANTE",0],["MUCHO",0]], 
@@ -34,6 +32,7 @@ class Cafe :
         self.escalas = {"dulce" : [0,100], "fuerte" : [0,100], "agua" : [0,240], "azucar" : [0,100]}    # variable : start,end
         self.entradas = {"dulce" : [0,5], "fuerte" : [0,4]}   # variable : valor,splits
         self.salidas = {"agua" : [40,"mL"], "azucar" : [0,"g"]} # variable : valor,unidad
+        self.matrizProba = np.zeros([4,5])
 
     def run(self):
         self.pedirUsuario()
@@ -48,25 +47,21 @@ class Cafe :
 
     def pedirUsuario(self):
         print("*******   BIENVENIDO   *******")
-        numeric=False;
-        print("Que tan dulce le gustaria su cafe?")
-        while numeric==False :
-            try:
-                res=int(raw_input("Escriba un valor entre 0 y 100 : "))
-                numeric=True
-            except ValueError :
-                print("Escribe un numero porfavor")
-        self.entradas["dulce"][0]=res
-
-        numeric=False;
-        print("Que tan fuerte le gustaria su cafe?")
-        while numeric==False :
-            try:
-                res=int(raw_input("Escriba un valor entre 0 y 100 : "))
-                numeric=True
-            except ValueError :
-                print("Escribe un numero porfavor")
-        self.entradas["fuerte"][0]=res
+        for key,value in self.entradas.items() :
+            ok=False;
+            mini=self.escalas[key][0]
+            maxi=self.escalas[key][1]
+            print("Que tan {} le gustaria su cafe?".format(key))
+            while ok==False :
+                try:
+                    res=int(input("Escriba un valor entre {} y {} : ".format(mini,maxi)))
+                    ok=True
+                    if res<mini or res>maxi :
+                        print("Su numero no cumple las condiciones...")
+                        ok=False
+                except ValueError :
+                    print("Escribe un numero porfavor")
+            self.entradas[key][0]=res
 
         print("Listo! Empezamos la preparacion :-)")
 
@@ -77,11 +72,11 @@ class Cafe :
         ax.text(promedio-3, 0.6, label, fontsize=9)
         
     def fuzzificar(self):
-        fig1=plt.figure(figsize=(15,10))
+        plt.figure(figsize=(15,10))
         plt.suptitle("FUZZIFICACION",fontsize=16)
         dim=1
         for key, value in self.entradas.items() :
-            ax=plt.subplot(2,1,dim,title=key)
+            ax=plt.subplot(2,1,dim,title="Que tan {} ?".format(key))
             plt.grid()
             labels=self.labels[key]
             scale=self.escalas[key]
@@ -94,7 +89,7 @@ class Cafe :
                 self.labels[key][i][1]=round(norm.pdf(value[0],promedio,sigma)/norm.pdf(promedio,promedio,sigma),2)
             ax.axvline(value[0],color="Crimson")
             dim+=1
-        #plt.show()
+        plt.show()
         plt.savefig("Fuzzificacion")
 
     def llenarMatriz(self):
@@ -111,7 +106,8 @@ class Cafe :
         # defuzzificar variable de salida
         print("defuzzificar() not implemented yet")
         return result
-
+    
+# %% Ejecucion
 if __name__ == '__main__':
     coffee = Cafe()
     coffee.run()
