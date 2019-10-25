@@ -21,9 +21,9 @@
                                     ["POQUITO","POQUITO","POCO","POCO","BASTANTE"],
                                     ["POQUITO","POQUITO","POQUITO","POCO","POCO"]],
                         "valuesMu" : [0,0,0,0],
-                        "escala" : [0,240],
+                        "escala" : [40,200],
                         "unidad" : "mL",
-                        "salida" : 40}},
+                        "salida" : 0}},
 "entradas" : ["fuerte","dulce"],
 
 "salidas" : ["azucar","agua"]}

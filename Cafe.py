@@ -10,6 +10,7 @@
 
 import numpy as np
 from scipy.stats import norm
+from scipy.integrate import simps
 import matplotlib.pyplot as plt
 
 import json
@@ -33,7 +34,8 @@ class Cafe :
         self.matrizProba = np.zeros(dim)
 
     def run(self):
-        #self.pedirUsuario()
+
+        self.pedirUsuario()
         self.fuzzificar()
         self.llenarMatriz()
         print("\n*******   SU CAFE CONTIENE   *******")
@@ -65,10 +67,31 @@ class Cafe :
         print("Listo! Empezamos la preparacion :-)")
 
     def addGauss(self,ax,xmin,xmax,promedio,sigma,label):
-        x = np.linspace(xmin, xmax, 100)
+        x = np.linspace(xmin, xmax, 1000)
         y = norm.pdf(x,promedio,sigma)/norm.pdf(promedio,promedio,sigma)
         ax.plot(x,y,color="lightblue")
         ax.text(promedio-3, 0.6, label, fontsize=9)
+        
+    def addGaussDefuzz(self,ax,xmin,xmax,promedio,sigma,label,mu):
+        x = np.linspace(xmin, xmax, 1000)
+        y = norm.pdf(x,promedio,sigma)/norm.pdf(promedio,promedio,sigma)
+        g = np.linspace(mu, mu, 1000)
+        
+        intersect = np.argwhere(np.diff(np.sign(y - g)) != 0).reshape(-1) + 0
+        idx=np.argwhere(g<y).reshape(-1) + 0
+        
+        area = simps(y, dx=5)-simps(y[idx], dx=5)+simps(g[idx], dx=5)
+        if len(idx>1): centro=promedio
+        elif promedio>idx[0] : centro=idx[0]+(promedio-idx[0])/2
+        else : centro=promedio+(idx[0]-promedio)/2
+        ax.plot(x,y,color="lightblue")
+        ax.plot(x[idx],g[idx],color="purple",linestyle="--")
+        #ax.fill_between(x,y,color="lavender")
+        ax.fill_between(x, y, where=y < g, facecolor='lavender')
+        ax.fill_between(x, g, where=y > g, facecolor='lavender')
+        plt.plot(x[intersect], y[intersect], 'x',color="purple")
+        ax.text(promedio-3, 0.6, label, fontsize=9)
+        return (area,centro)
         
     def fuzzificar(self):
         plt.figure(figsize=(15,10))
@@ -117,7 +140,7 @@ class Cafe :
         
     def defuzzificar(self):
         plt.figure(figsize=(15,10))
-        plt.suptitle("defuzzificar",fontsize=16)
+        plt.suptitle("DEFUZZIFICACION",fontsize=16)
         dim=1
         for key in self.salidas :
             ax=plt.subplot(2,1,dim,title="Cuanto {} ?".format(key))
@@ -127,17 +150,22 @@ class Cafe :
             nbSplit=len(labels)
             n=int((scale[1]-scale[0])/(nbSplit-1))
             sigma=n/3
-            valuesX=[]
+            sumArea=0
+            sumAreaCentro=0
             for i in range(0,nbSplit): 
                 promedio=scale[0]+i*n
-                self.addGauss(ax,scale[0],scale[1],promedio,sigma,labels[i])
-                valuesX.append(norm.cdf(self.variables[key]["valuesMu"][i]*norm.pdf(promedio,promedio,sigma),promedio,sigma))
-            print(valuesX)
-            self.variables[key]["salida"]=sum(valuesX)/len(valuesX)
+                mu=self.variables[key]["valuesMu"][i]
+                if mu>0 :
+                    area, centro=self.addGaussDefuzz(ax,scale[0],scale[1],promedio,sigma,labels[i],mu)
+                    sumArea+=area
+                    sumAreaCentro+=area*centro
+                else:
+                    self.addGauss(ax,scale[0],scale[1],promedio,sigma,labels[i])
+            self.variables[key]["salida"]=round(sumAreaCentro/sumArea,2)
             ax.axvline(self.variables[key]["salida"],color="Crimson")
             dim+=1
         plt.show()
-        plt.savefig("defuzzificar")
+        plt.savefig("Defuzzificacion")
     
 # %% Ejecucion
 if __name__ == '__main__':
