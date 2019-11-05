@@ -14,7 +14,7 @@ from scipy.integrate import simps
 import matplotlib.pyplot as plt
 
 import json
-with open('Dictionario.json') as js:
+with open('DictionarioRobot.json') as js:
     DICTIONARIO = json.load(js)
     ENTRADAS = DICTIONARIO.get('entradas')
     SALIDAS = DICTIONARIO.get('salidas')
@@ -22,7 +22,7 @@ with open('Dictionario.json') as js:
 
 # %% Clase principal
 
-class Cafe :
+class Robot :
 
     def __init__ (self,entradas,salidas,variables):
         self.entradas=entradas    # list of String
@@ -98,15 +98,17 @@ class Cafe :
         plt.suptitle("FUZZIFICACION",fontsize=16)
         dim=1
         for key in self.entradas :
-            ax=plt.subplot(2,1,dim,title="Que tan {} ?".format(key))
+            ax=plt.subplot(2,1,dim,title="Angulo {} ?".format(key))
             plt.grid()
             labels=self.variables[key]["labels"]
             scale=self.variables[key]["escala"]
             nbSplit=len(labels)
-            n=int((scale[1]-scale[0])/(nbSplit-1))
-            sigma=n/3
+            #n=int((scale[1]-scale[0])/(nbSplit-1))
+            #sigma=n/3
             for i in range(0,nbSplit):
-                promedio=scale[0]+i*n
+                sigma=self.variables[key]["std"][i]
+                promedio=self.variables[key]["promedios"][i]
+                #promedio=scale[0]+i*n
                 self.addGauss(ax,scale[0],scale[1],promedio,sigma,labels[i])
                 mu=round(norm.pdf(self.variables[key]["entrada"],promedio,sigma)/norm.pdf(promedio,promedio,sigma),2)
                 self.variables[key]["valuesMu"][i]=mu
@@ -143,17 +145,19 @@ class Cafe :
         plt.suptitle("DEFUZZIFICACION",fontsize=16)
         dim=1
         for key in self.salidas :
-            ax=plt.subplot(2,1,dim,title="Cuanto {} ?".format(key))
+            ax=plt.subplot(2,1,dim,title="Angulo {} ?".format(key))
             plt.grid()
             labels=self.variables[key]["labels"]
             scale=self.variables[key]["escala"]
             nbSplit=len(labels)
-            n=int((scale[1]-scale[0])/(nbSplit-1))
-            sigma=n/3
+            #n=int((scale[1]-scale[0])/(nbSplit-1))
+            #sigma=n/3
             sumArea=0
             sumAreaCentro=0
             for i in range(0,nbSplit): 
-                promedio=scale[0]+i*n
+                sigma=self.variables[key]["std"][i]
+                promedio=self.variables[key]["promedios"][i]
+                #promedio=scale[0]+i*n
                 mu=self.variables[key]["valuesMu"][i]
                 if mu>0 :
                     area, centro=self.addGaussDefuzz(ax,scale[0],scale[1],promedio,sigma,labels[i],mu)
@@ -169,5 +173,5 @@ class Cafe :
     
 # %% Ejecucion
 if __name__ == '__main__':
-    coffee = Cafe(ENTRADAS,SALIDAS,VARIABLES)
-    coffee.run()
+    robot = Robot(ENTRADAS,SALIDAS,VARIABLES)
+    robot.run()
